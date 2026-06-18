@@ -102,7 +102,7 @@ nargo test
 ### Generate a proof (CLI)
 Edit `Prover.toml` with your inputs, then:
 ```bash
-nargo prove
+nargo execute
 # → target/proof
 ```
 
