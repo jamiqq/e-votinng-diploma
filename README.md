@@ -228,13 +228,10 @@ implementation/
 │   ├── lib/forge-std/       # Foundry standard library
 │   └── foundry.toml
 ├── backend/
-│   ├── src/
-│   │   ├── index.ts         # Express entry point
-│   │   ├── routes.ts        # API endpoints
-│   │   ├── merkle.ts        # Merkle tree + Barretenberg hashing
-│   │   └── election.ts      # Election constants
-│   ├── package.json
-│   └── tsconfig.json
-└── scripts/
-    └── Script.ts
-```
+    ├── src/
+    │   ├── index.ts         # Express entry point
+    │   ├── routes.ts        # API endpoints
+    │   ├── merkle.ts        # Merkle tree + Barretenberg hashing
+    │   └── election.ts      # Election constants
+    ├── package.json
+    └── tsconfig.json
