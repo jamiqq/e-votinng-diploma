@@ -1,0 +1,19 @@
+# ── Environment ──────────────────────────────────────────────────────────────
+.env
+.env.*
+
+# ── OS ───────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── Node / TypeScript (backend & scripts) ────────────────────────────────────
+backend/node_modules/
+backend/dist/
+
+# ── Noir circuits ─────────────────────────────────────────────────────────────
+circuits/target/
+
+# ── Foundry (contracts) ───────────────────────────────────────────────────────
+contracts/out/
+contracts/cache/
+contracts/broadcast/
