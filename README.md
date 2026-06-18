@@ -106,11 +106,6 @@ nargo execute
 # → target/proof
 ```
 
-### Verify a proof (CLI)
-```bash
-nargo verify
-```
-
 ### Export verification key
 ```bash
 bb write_vk -b target/circuts.json -o target/vk
