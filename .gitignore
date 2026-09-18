@@ -1,6 +1,8 @@
 # ── Environment ──────────────────────────────────────────────────────────────
 .env
 .env.*
+.vscode
+.vscode.*
 
 # ── OS ───────────────────────────────────────────────────────────────────────
 .DS_Store
@@ -18,4 +20,3 @@ contracts/out/
 contracts/cache/
 contracts/broadcast/
 
-*.vscode
