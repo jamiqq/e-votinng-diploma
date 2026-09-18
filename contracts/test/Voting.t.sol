@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import {Test} from "forge-std/Test.sol";
+import {Test} from "../lib/forge-std/src/Test.sol";
 import {Voting} from "../src/Voting.sol";
 
 // ── Mock verifiers ────────────────────────────────────────────────────────────
