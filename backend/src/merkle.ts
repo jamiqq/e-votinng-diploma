@@ -1,4 +1,4 @@
-import { BarretenbergSync, Fr } from '@aztec/bb.js';
+import { BarretenbergSync, fieldToString } from '@aztec/bb.js';
 
 export const TREE_DEPTH = 6;
 export const TREE_SIZE = 1 << TREE_DEPTH; // 64
@@ -15,16 +15,23 @@ function bb(): BarretenbergSync {
   return _bb;
 }
 
-// Converts an Fr result to bigint via its hex toString().
-function frToBigInt(f: Fr): bigint {
-  return BigInt(f.toString());
+// bb.js 5.x dropped the Fr-wrapper pedersenHash(frs, index) API in favor of raw
+// 32-byte big-endian field encodings (see PedersenHash's { inputs: Uint8Array[] } shape).
+function bigintToField(x: bigint): Uint8Array {
+  const bytes = new Uint8Array(32);
+  let v = x;
+  for (let i = 31; i >= 0; i--) {
+    bytes[i] = Number(v & 0xffn);
+    v >>= 8n;
+  }
+  return bytes;
 }
 
 // Computes std::hash::pedersen_hash (hash_index=0) over an array of field elements.
 // Matches exactly what the Noir circuit computes.
 function pedersenHash(inputs: bigint[]): bigint {
-  const frs = inputs.map(x => new Fr(x));
-  return frToBigInt(bb().pedersenHash(frs, 0));
+  const { hash } = bb().pedersenHash({ inputs: inputs.map(bigintToField), hashIndex: 0 });
+  return BigInt(fieldToString(hash));
 }
 
 export class MerkleTree {
