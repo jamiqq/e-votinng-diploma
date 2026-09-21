@@ -111,6 +111,3 @@ export class MerkleTree {
     return { index, hashPath };
   }
 }
-
-// Single global tree instance for this demo election.
-export const merkleTree = new MerkleTree();
