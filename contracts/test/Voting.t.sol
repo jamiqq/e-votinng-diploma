@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import {Test} from "forge-std/Test.sol";
+import {Test} from "../lib/forge-std/src/Test.sol";
 import {Voting} from "../src/Voting.sol";
 
 // ── Mock verifiers ────────────────────────────────────────────────────────────
@@ -46,7 +46,7 @@ contract VotingTest is Test {
     address stranger;
 
     // Storage array so setUp can push into it; automatically copied to memory on call.
-    Voting.Candidate[] internal _fourCandidates;
+    string[] internal _fourCandidates;
 
     // ── Setup ─────────────────────────────────────────────────────────────────
 
@@ -60,10 +60,10 @@ contract VotingTest is Test {
         voting = new Voting(address(acceptVerifier));
 
         delete _fourCandidates;
-        _fourCandidates.push(Voting.Candidate({name: "Alice", voteCount: 0}));
-        _fourCandidates.push(Voting.Candidate({name: "Bob",   voteCount: 0}));
-        _fourCandidates.push(Voting.Candidate({name: "Carol", voteCount: 0}));
-        _fourCandidates.push(Voting.Candidate({name: "Dave",  voteCount: 0}));
+        _fourCandidates.push("Alice");
+        _fourCandidates.push("Bob");
+        _fourCandidates.push("Carol");
+        _fourCandidates.push("Dave");
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
@@ -164,19 +164,19 @@ contract VotingTest is Test {
     // ── Candidate count validation ────────────────────────────────────────────
 
     function test_CreateElection_RevertsIfTooFewCandidates() public {
-        Voting.Candidate[] memory three = new Voting.Candidate[](3);
-        three[0] = Voting.Candidate({name: "A", voteCount: 0});
-        three[1] = Voting.Candidate({name: "B", voteCount: 0});
-        three[2] = Voting.Candidate({name: "C", voteCount: 0});
+        string[] memory three = new string[](3);
+        three[0] = "A";
+        three[1] = "B";
+        three[2] = "C";
 
         vm.expectRevert("Election should have exactly 4 candidates.");
         voting.createElection(three, ROOT, T_START, T_END);
     }
 
     function test_CreateElection_RevertsIfTooManyCandidates() public {
-        Voting.Candidate[] memory five = new Voting.Candidate[](5);
+        string[] memory five = new string[](5);
         for (uint256 i = 0; i < 5; i++) {
-            five[i] = Voting.Candidate({name: "X", voteCount: 0});
+            five[i] = "X";
         }
 
         vm.expectRevert("Election should have exactly 4 candidates.");

@@ -13,3 +13,8 @@ optimizer_runs = 200
 skip = ["src/Verifier.sol"]
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
+
+[profile.deploy]
+optimizer = false
+via_ir = false
+skip = []

@@ -5,13 +5,14 @@
   "type": "module",
   "scripts": {
     "dev": "tsx src/index.ts",
-    "build": "tsc",
-    "introspect": "tsx introspect.ts"
+    "build": "tsc"
   },
   "dependencies": {
-    "@aztec/bb.js": "^0.82.2",
+    "@aztec/bb.js": "^5.0.0-nightly.20260324",
+    "@noir-lang/noir_js": "^1.0.0-beta.21",
     "cors": "^2.8.5",
-    "express": "^4.19.2"
+    "express": "^4.19.2",
+    "viem": "^2.56.8"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",

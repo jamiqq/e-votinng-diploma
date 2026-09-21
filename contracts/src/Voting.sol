@@ -50,11 +50,19 @@ contract Voting{
         require(block.timestamp > elections[electionId].endTime, "Election wasn't yet finished.");
     }
 
-    function createElection(Candidate[] memory cands, bytes32 root, uint256 start, uint256 end) onlyOwner() external{
+    function createElection(string[] memory candidateNames, bytes32 root, uint256 start, uint256 end) onlyOwner() external{
         require(start < end, "Election start can't be after the election end.");
-        require(cands.length == 4, "Election should have exactly 4 candidates.");
-        elections.push(Election({merkleRoot: root, startTime: start, endTime: end, candidates: cands}));
+        require(candidateNames.length == 4, "Election should have exactly 4 candidates.");
+
+        elections.push();
         Election storage e = elections[elections.length - 1];
+        e.merkleRoot = root;
+        e.startTime = start;
+        e.endTime = end;
+        for (uint256 i = 0; i < candidateNames.length; i++) {
+            e.candidates.push(Candidate({name: candidateNames[i], voteCount: 0}));
+        }
+
         emit ElectionRegistered(elections.length - 1, e.merkleRoot);
     }
 
