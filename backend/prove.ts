@@ -7,22 +7,49 @@
 // before generating and submitting the proof.
 //
 // Run with: npx tsx prove.ts
-import { readFileSync } from 'fs';
 import { Barretenberg, BarretenbergSync, UltraHonkBackend, fieldToString } from '@aztec/bb.js';
 import { Noir } from '@noir-lang/noir_js';
 import type { CompiledCircuit, InputMap } from '@noir-lang/types';
 import { createPublicClient, createWalletClient, http, type Hex } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { foundry } from 'viem/chains';
+import { randomBytes } from "crypto";
+import { existsSync, readFileSync, writeFileSync } from "fs";
 
 // ── Config — edit these per test run ────────────────────────────────────────
 
 const BACKEND_URL = process.env.BACKEND_URL ?? 'http://localhost:3000';
 const RPC_URL = process.env.RPC_URL ?? 'http://localhost:8545';
 const CIRCUIT_PATH = new URL('../circuits/target/circuts.json', import.meta.url);
-
-const SECRET = process.env.SECRET ? BigInt(process.env.SECRET) : 3n; // the voter's private secret — never sent to the backend
 const VOTE = process.env.VOTE ? Number(process.env.VOTE) : 2;        // candidate index, 0-3
+
+// BN254 scalar field order — secrets must live in this field to be valid circuit inputs.
+const BN254_FR_MODULUS = 21888242871839275222246405745257275088548364400416034343698204186575808495617n;
+
+const SECRET_FILE = new URL('./.voter-secret', import.meta.url);
+
+// 512 random bits reduced mod p: the modulo bias is ~2^-258, i.e. negligible
+// (32 bytes would leave a measurable bias since p is only ~2^254).
+function generateSecret(): bigint {
+  const s = BigInt('0x' + randomBytes(64).toString('hex')) % BN254_FR_MODULUS;
+  if (s === 0n) return generateSecret(); // astronomically unlikely, but 0 is also the padding leaf
+  return s;
+}
+
+// Priority: explicit SECRET env (testing only) > saved secret file > freshly generated.
+// The secret is persisted so that re-running prove.ts reuses the SAME commitment
+// instead of registering a new, unusable one. It never leaves this machine.
+function loadOrCreateSecret(): bigint {
+  if (process.env.SECRET) return BigInt(process.env.SECRET);
+  if (existsSync(SECRET_FILE)) return BigInt(readFileSync(SECRET_FILE, 'utf-8').trim());
+
+  const secret = generateSecret();
+  writeFileSync(SECRET_FILE, secret.toString(), { mode: 0o600 });
+  console.log('Generated a new voter secret and saved it to .voter-secret (keep it private; losing it means losing the vote).');
+  return secret;
+}
+
+const SECRET = loadOrCreateSecret(); // replaces: process.env.SECRET ? BigInt(...) : 3n
 
 // Which registration batch to use. Leave unset to start a fresh one (POST
 // /elections) — print it out so you can pass BATCH_ID=<n> on later runs to
