@@ -106,7 +106,7 @@ cd circuits
 ### Compile
 ```bash
 nargo compile
-# → target/circuts.json  (bytecode + ABI)
+# → target/circuits.json  (bytecode + ABI)
 ```
 
 ### Run tests
@@ -121,7 +121,7 @@ nargo test
 `nargo prove`/`nargo verify` don't exist in this Nargo version — proving is a two-step, two-tool process now:
 ```bash
 nargo execute my_witness          # compiles + runs the circuit against Prover.toml, writes the witness
-bb prove -b target/circuts.json -w target/my_witness.gz -o target/ -t evm --write_vk
+bb prove -b target/circuits.json -w target/my_witness.gz -o target/ -t evm --write_vk
 # → target/proof, target/public_inputs, target/vk
 ```
 `-t evm` is required — it's what makes the proof's hash scheme (keccak) match the generated Solidity verifier; other targets produce an incompatible proof.
