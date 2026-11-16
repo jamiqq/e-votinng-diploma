@@ -55,7 +55,7 @@ Two Solidity contracts compiled and tested with Foundry:
 
 | Contract | Description |
 |---|---|
-| `HonkVerifier` (`Verifier.sol`) | Auto-generated UltraHonk verifier for the Noir circuit. Verifies the ZK proof on-chain. Exceeds the EIP-170 24KB contract size limit — see "Contracts" below. |
+| `HonkVerifier` (`Verifier.sol`) | Auto-generated UltraHonk verifier for the Noir circuit. Verifies the ZK proof on-chain. Deployed size 24,356 bytes, just under the 24,576-byte EIP-170 limit (it was ~33.9KB before the bb 5.3.0 regeneration — see "Toolchain history"). |
 | `Voting` (`Voting.sol`) | Application logic. `elections[]` is an array, so the contract supports any number of concurrent elections, each with its own Merkle root, candidates (created with `voteCount` fixed at `0` — the deployer can't seed results), timing window, and nullifier set. |
 
 ### Backend (`backend/`)
@@ -71,13 +71,29 @@ Each registration round is a **batch** — its own Merkle tree, created before t
 
 | Tool | Version | Install |
 |---|---|---|
-| [Nargo](https://noir-lang.org/docs/getting_started/installation/) | exactly `1.0.0-beta.21` | `curl -L https://raw.githubusercontent.com/noir-lang/noirup/main/install \| bash && noirup` |
-| [Barretenberg (`bb`) CLI](https://noir-lang.org/docs/getting_started/installation/) | matching build, `5.0.0-nightly.20260324` | via `bbup`, or see `backend/README.md`'s version-pinning note |
+| [Nargo](https://noir-lang.org/docs/getting_started/installation/) | exactly `1.0.0` | `curl -L https://raw.githubusercontent.com/noir-lang/noirup/main/install \| bash && noirup -v 1.0.0` |
+| [Barretenberg (`bb`) CLI](https://noir-lang.org/docs/getting_started/installation/) | exactly `5.3.0` | `bbup -v 5.3.0` (pass `-v` explicitly — plain `bbup` picks `6.0.0` for Nargo 1.0.0, see "Toolchain history") |
 | [Foundry](https://book.getfoundry.sh/getting-started/installation) | latest | `curl -L https://foundry.paradigm.xyz \| bash && foundryup` |
 | Node.js | ≥ 18 | [nodejs.org](https://nodejs.org) |
 | npm | ≥ 9 | bundled with Node.js |
 
 **Version pinning matters here, non-obviously.** `nargo`, `bb`, and the backend's `@noir-lang/noir_js`/`@aztec/bb.js` npm packages all serialize ACIR bytecode and proofs in formats that change across releases — mixing versions fails either with a cryptic WASM `unreachable` trap or a "failed to deserialize circuit" error, not a helpful message. If you ever run `noirup`/`bbup` to update the CLIs, re-pin the backend's npm dependencies to match (see `backend/README.md`).
+
+### Toolchain history
+
+| Date | Nargo | `bb` CLI | `@noir-lang/noir_js` | `@aztec/bb.js` | Notes |
+|---|---|---|---|---|---|
+| until 2026-11-16 | `1.0.0-beta.21` | `5.0.0-nightly.20260324` | `^1.0.0-beta.21` | `^5.0.0-nightly.20260324` | Prereleases; caret ranges, so only `package-lock.json` actually pinned them. No record of why the nightly was chosen. |
+| 2026-11-16 → | `1.0.0` | `5.3.0` | `1.0.0` | `5.3.0` | Stable releases, exact pins (no caret). |
+
+What changed on 2026-11-16 (branch `toolchain/noir-1.0.0`):
+- **Toolchain:** `noirup -v 1.0.0`, `bbup -v 5.3.0`; backend deps re-pinned exactly with `npm install --save-exact`.
+- **Circuit:** source unchanged. Recompiled; all 5 `nargo test` tests pass. Pedersen output is unchanged (`secret=3` still gives commitment `16285383…954567` and the same root as `test_valid_proof`), so existing commitments and test vectors stay valid.
+- **`Verifier.sol`:** regenerated with `bb write_solidity_verifier -k target/vk -o ../contracts/src/Verifier.sol -t evm`. New `VK_HASH = 0x2e7d61b5…eb138f71` (was `0x3017965c…7b257679`); matches `circuits/target/vk_hash`. Deployed size dropped from 33,875 to 24,356 bytes, so `anvil --disable-code-size-limit` is no longer needed. `ZKTranscriptLib` unchanged in size (10,776 bytes).
+- **Verified end-to-end** on local anvil: deploy → register → close → `createElection` → `prove.ts` (bb.js proof) → `vote()` succeeded, gas used 3,147,839 for one vote. A second vote with the same secret reverted with "This voter has already cast a vote."; `bb verify` rejects the proof against tampered public inputs.
+- **Why bb 5.3.0, not 6.0.0:** bbup's official pairing table maps Nargo `1.0.0` → bb `6.0.0`, but `@aztec/bb.js` 6.0.0 exists on npm only as nightlies. bb 5.3.0 is the latest stable release on both the CLI and npm, so the CLI (vk, `Verifier.sol`) and the JS prover (`prove.ts`) are guaranteed to be the same build. It is not an officially listed pairing for Nargo 1.0.0; compatibility was established by the end-to-end test above.
+
+Gas and timing figures measured before 2026-11-16 belong to the old toolchain and aren't directly comparable.
 
 ---
 
@@ -90,7 +106,7 @@ cd circuits
 ### Compile
 ```bash
 nargo compile
-# → target/circuts.json  (bytecode + ABI)
+# → target/circuits.json  (bytecode + ABI)
 ```
 
 ### Run tests
@@ -105,7 +121,7 @@ nargo test
 `nargo prove`/`nargo verify` don't exist in this Nargo version — proving is a two-step, two-tool process now:
 ```bash
 nargo execute my_witness          # compiles + runs the circuit against Prover.toml, writes the witness
-bb prove -b target/circuts.json -w target/my_witness.gz -o target/ -t evm --write_vk
+bb prove -b target/circuits.json -w target/my_witness.gz -o target/ -t evm --write_vk
 # → target/proof, target/public_inputs, target/vk
 ```
 `-t evm` is required — it's what makes the proof's hash scheme (keccak) match the generated Solidity verifier; other targets produce an incompatible proof.
@@ -135,9 +151,10 @@ forge test -vv
 
 ### Start a local node
 ```bash
-anvil --disable-code-size-limit
-# HonkVerifier's deployed bytecode (~34KB) exceeds the 24KB EIP-170 limit that
-# Anvil enforces by default — this flag is required for it to deploy locally.
+anvil
+# HonkVerifier is 24,356 bytes, under the 24,576-byte EIP-170 limit, so no flag
+# is needed. (Before 2026-11-16 it was ~33.9KB and required
+# --disable-code-size-limit — see "Toolchain history".)
 ```
 
 ### Deploy

@@ -20,7 +20,7 @@ import { existsSync, readFileSync, writeFileSync } from "fs";
 
 const BACKEND_URL = process.env.BACKEND_URL ?? 'http://localhost:3000';
 const RPC_URL = process.env.RPC_URL ?? 'http://localhost:8545';
-const CIRCUIT_PATH = new URL('../circuits/target/circuts.json', import.meta.url);
+const CIRCUIT_PATH = new URL('../circuits/target/circuits.json', import.meta.url);
 const VOTE = process.env.VOTE ? Number(process.env.VOTE) : 2;        // candidate index, 0-3
 
 // BN254 scalar field order — secrets must live in this field to be valid circuit inputs.
